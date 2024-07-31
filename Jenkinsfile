@@ -1,54 +1,38 @@
 pipeline {
     agent any
-
-    environment {
-        DOCKER_HUB_REPO = 'harshithsai45/mywebapp'
-        DOCKER_HUB_CREDENTIALS_ID = 'docker-hub-credentials' // Jenkins credentials ID for Docker Hub
+    tools {
+        maven 'M3' // Ensure this matches the name configured in Jenkins
+        git 'Default' // Ensure this matches the name configured in Jenkins
     }
-
+    environment {
+        DOCKER_HUB_CREDENTIALS = credentials('docker-hub-credentials')
+    }
     stages {
         stage('Clone Repository') {
             steps {
-                 git branch: 'main', url: 'https://github.com/saiharshith-45/ProjectAQEdemo.git', credentialsId: 'git-hub-credentials'
+                git 'https://github.com/saiharshith-45/ProjectAQEdemo.git'
             }
         }
         stage('Build with Maven') {
             steps {
-                script {
-                    def mvnHome = tool name: 'M3', type: 'maven'
-                    withEnv(["MVN_HOME=$mvnHome"]) {
-                        sh '"$MVN_HOME/bin/mvn" clean package'
-                    }
-                }
+                sh 'mvn clean install'
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    docker.build("${env.DOCKER_IMAGE}")
+                    docker.build('harshithsai45/mywebapp:latest')
                 }
             }
         }
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('', "${DOCKER_HUB_CREDENTIALS}") {
-                        docker.image("${env.DOCKER_IMAGE}").push('latest')
+                    docker.withRegistry('https://registry.hub.docker.com', DOCKER_HUB_CREDENTIALS) {
+                        docker.image('harshithsai45/mywebapp:latest').push()
                     }
                 }
             }
-        }
-    }
-
-    post {
-        always {
-            echo 'Pipeline completed.'
-        }
-        success {
-            echo 'Pipeline succeeded.'
-        }
-        failure {
-            echo 'Pipeline failed.'
         }
     }
 }
