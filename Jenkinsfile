@@ -9,7 +9,7 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/saiharshith-45/ProjectAQEdemo.git'
+                 git branch: 'main', url: 'https://github.com/saiharshith-45/ProjectAQEdemo.git', credentialsId: 'git-hub-credentials'
             }
         }
         stage('Build with Maven') {
