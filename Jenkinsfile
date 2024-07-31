@@ -9,28 +9,31 @@ pipeline {
     stages {
         stage('Clone Repository') {
             steps {
-                git 'https://github.com/username/mywebapp.git'
+                 git branch: 'main', url: 'https://github.com/saiharshith-45/ProjectAQEdemo.git', credentialsId: 'git-hub-credentials'
             }
         }
         stage('Build with Maven') {
             steps {
-                withMaven(maven: 'M3') {
-                    sh 'mvn clean package'
+                script {
+                    def mvnHome = tool name: 'M3', type: 'maven'
+                    withEnv(["MVN_HOME=$mvnHome"]) {
+                        sh '"$MVN_HOME/bin/mvn" clean package'
+                    }
                 }
             }
         }
         stage('Build Docker Image') {
             steps {
                 script {
-                    def app = docker.build("${DOCKER_HUB_REPO}:latest", "-f Dockerfile .")
+                    docker.build("${env.DOCKER_IMAGE}")
                 }
             }
         }
         stage('Push Docker Image') {
             steps {
                 script {
-                    docker.withRegistry('https://index.docker.io/v1/', DOCKER_HUB_CREDENTIALS_ID) {
-                        app.push('latest')
+                    docker.withRegistry('', "${DOCKER_HUB_CREDENTIALS}") {
+                        docker.image("${env.DOCKER_IMAGE}").push('latest')
                     }
                 }
             }
@@ -38,12 +41,14 @@ pipeline {
     }
 
     post {
+        always {
+            echo 'Pipeline completed.'
+        }
         success {
-            echo 'Pipeline executed successfully.'
+            echo 'Pipeline succeeded.'
         }
         failure {
             echo 'Pipeline failed.'
         }
     }
 }
- 
